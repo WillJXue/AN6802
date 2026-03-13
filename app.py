@@ -1,8 +1,11 @@
 from flask import Flask, render_template, request
 import joblib
 import groq
+import os
+from groq import Groq
 
 os.environ["GROQ_API_KEY"] = ""
+client = Groq()
 
 model = joblib.load("foodexp.pkl")
 
@@ -44,11 +47,28 @@ def chatbot():
 
 @app.route("/roe", methods = ["get", "post"])
 def roe():
-    return(render_template("roe.html"))
+    r = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[    
+            {"role": "system", "content": "Please explain RoE in 20 words"}
+        ]
+    )
+    return(render_template("roe.html", r = r.choices[0].message.content))
 
 @app.route("/generalQuestion", methods = ["get", "post"])
 def generalQuestion():
     return(render_template("generalQuestion.html"))
+
+@app.route("/groqReply", methods = ["get", "post"])
+def groqReply():
+    q = request.form.get("q")
+    r = client.chat.completions.create(
+        model="llama-3.1-8b-instant",
+        messages=[    
+            {"role": "system", "content": q}
+        ]
+    )
+    return(render_template("groqReply.html", r = r.choices[0].message.content))
 
 if __name__ == "__main__":
     app.run()
